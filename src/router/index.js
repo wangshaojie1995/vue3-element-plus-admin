@@ -45,21 +45,6 @@ const main = {
       }
     },
     {
-      path: '/demo',
-      name: 'demo',
-      component: () => import('@/views/modules/demo/index.vue'),
-      meta: {
-        id: 'demo',
-        title_cn: 'Demo',
-        title_en: '',
-        isTab: true,
-        type: 1,
-        isDynamic: false,
-        keepAlive: true,
-        multiple: true
-      }
-    },
-    {
       path: '/set',
       name: 'set',
       component: () => import('@/views/modules/set/index.vue'),
@@ -141,10 +126,7 @@ function addRoutes(menus = [], routeList = []) {
         }
       }
       if (isURL(item.url)) {
-        route['path'] = `/i-${ item.id }`
-        route['name'] = `i-${ item.id }`
-        route['component'] = () => import(`@/views/modules/iframe/index.vue`)
-        route['meta']['iframeUrl'] = item.url
+        return
       }
       routeList.push(route)
     }
