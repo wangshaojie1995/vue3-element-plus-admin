@@ -1,11 +1,46 @@
-/*
- * @Description: 正则判断
- * @Author: gumingchen
- * @Email: 1240235512@qq.com
- * @Date: 2021-02-08 16:07:19
- * @LastEditors: gumingchen
- * @LastEditTime: 2021-03-02 16:10:04
+/**
+ * @description: 整数
+ * @param {*} input
+ * @return {*}
+ * @author: gumingchen
  */
+export function isInteger(input) {
+  const reg = /^-?[1-9]\d*$/
+  return reg.test(input)
+}
+
+/**
+ * @description: 正整数
+ * @param {*} input
+ * @return {*}
+ * @author: gumingchen
+ */
+export function isPositiveInteger(input) {
+  const reg = /^[1-9]\d*$/
+  return reg.test(input)
+}
+
+/**
+ * @description: 负整数
+ * @param {*} input
+ * @return {*}
+ * @author: gumingchen
+ */
+export function isNegtiveInteger(input) {
+  const reg = /^-[1-9]\d*$/
+  return reg.test(input)
+}
+
+/**
+ * @description: 两位小数
+ * @param {*} input
+ * @return {*}
+ * @author: gumingchen
+ */
+export function isTwoDecimal(input) {
+  const reg = /^-?\d*(\.\d{1,2})?$/
+  return reg.test(input)
+}
 
 /**
  * @description: 邮箱
@@ -30,6 +65,17 @@ export function isURL(input) {
 }
 
 /**
+ * @description: 域名（带协议）
+ * @param {*} input
+ * @return {*}
+ * @author: gumingchen
+ */
+export function isDomain(input) {
+  const reg = /^http[s]?:\/\/[a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+$/
+  return reg.test(input)
+}
+
+/**
  * @description: 端口
  * @param {*} input
  * @return {*}
@@ -46,6 +92,24 @@ export function isPort(input) {
  */
 export function isMobile(input) {
   const reg = /^1[0-9]{10}$/
+  return reg.test(input)
+}
+
+/**
+ * 用户名
+ * @param {*} input
+ */
+export function isUsername(input) {
+  const reg = /^[a-zA-Z]\w{3,11}$/
+  return reg.test(input)
+}
+
+/**
+ * 密码
+ * @param {*} input
+ */
+export function isPassword(input) {
+  const reg = /^[a-zA-Z0-9_-]{8,16}$/
   return reg.test(input)
 }
 

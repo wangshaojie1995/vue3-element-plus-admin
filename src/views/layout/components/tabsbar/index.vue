@@ -1,14 +1,53 @@
-<!--
- * @Description:
- * @Author: gumingchen
- * @Email: 1240235512@qq.com
- * @Date: 2021-04-15 19:20:39
- * @LastEditors: gumingchen
- * @LastEditTime: 2021-05-07 11:40:03
--->
+
+<script setup>
+const router = useRouter()
+const route = useRoute()
+const tabsStore = useTabsStore()
+const themeStore = useThemeStore()
+
+const { active, tabs } = storeToRefs(tabsStore)
+const { refresh } = storeToRefs(themeStore)
+
+/**
+ * 点击跳转
+ */
+const clickHandle = ({ index }) => {
+  const tab = tabs.value[+index]
+  router.push({
+    name: tab.name,
+    query: tab.query,
+    params: tab.params
+  })
+}
+
+/**
+ * 移除标签
+ */
+const removeHandle = (name) => {
+  tabsStore.removeHandle([name])
+}
+
+onBeforeRouteUpdate((to) => {
+  tabsStore.changeHandle(to)
+  // const meta = to.meta
+  // if (meta.multiple) {
+  //   refresh.value = true
+  //   nextTick(() => {
+  //     refresh.value = false
+  //   })
+  // }
+})
+
+onBeforeMount(() => {
+  tabsStore.changeHandle(route)
+})
+
+</script>
+
 <template>
-  <div class="tabs">
+  <div class="tabsbar-container flex flex_a_i-flex-end">
     <el-tabs
+      class="margin_b-1"
       type="card"
       v-model="active"
       @tab-click="clickHandle"
@@ -16,93 +55,27 @@
       <el-tab-pane
         v-for="tab in tabs"
         :key="tab.value"
-        :label="tab.label_cn"
+        :label="tab.label"
         :name="tab.value"
-        :closable="tab.closable" />
+        :closable="tabs.length > 1" />
     </el-tabs>
   </div>
 </template>
 
-<script>
-import { computed, defineComponent, nextTick, onBeforeMount } from 'vue'
-import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
-import { useStore } from 'vuex'
-
-export default defineComponent({
-
-  setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const store = useStore()
-
-    const tabActive = computed(() => store.state.tab.active)
-    const tabs = computed(() => store.state.tab.tabs)
-
-    const active = computed({
-      get: () => {
-        return tabActive.value
-      },
-      set: (val) => {
-        store.dispatch('tab/setActive', val)
-      }
-    })
-
-    onBeforeRouteUpdate((to) => {
-      store.dispatch('tab/changeHandle', to)
-      const meta = to.meta
-      if (meta.multiple) {
-        store.dispatch('setting/setRefresh', true)
-        nextTick(() => {
-          store.dispatch('setting/setRefresh', false)
-        })
-      }
-    })
-
-    onBeforeMount(() => {
-      store.dispatch('tab/changeHandle', route)
-    })
-
-    /**
-     * @description: 标签点击路由跳转事件
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const clickHandle = ({ index }) => {
-      const tab = tabs.value[+index]
-      router.push({
-        name: tab.name,
-        query: tab.query,
-        params: tab.params
-      })
-    }
-
-    /**
-     * @description: 标签删除事件
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const removeHandle = name => {
-      store.dispatch('tab/removeHandle', [name])
-    }
-
-    return {
-      active,
-      tabs,
-      clickHandle,
-      removeHandle
-    }
-  }
-})
-</script>
-
 <style lang="scss" scoped>
-.tabs {
-  padding: 9px 10px 0 10px;
-  ::v-deep(.el-tabs__header) {
-    margin: 0;
-    border: none;
+.tabsbar-container {
+  z-index: 5;
+  padding: 10px 10px 0 10px;
+  height: var(--gl-tabsbar-height);
+  background-color: var(--gl-tabsbar-background-color);
+  box-shadow: var(--el-box-shadow-light);
+  ::v-deep(.el-tabs) {
+    width: 100%;
+    .el-tabs__header {
+      margin: 0;
+      border: none;
+    }
   }
+
 }
 </style>

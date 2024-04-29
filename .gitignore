@@ -1,11 +1,17 @@
 .DS_Store
 node_modules
-/dist
+dist
+dist.zip
+admin
+admin.zip
+deploy
 
 
 # local env files
 .env.local
 .env.*.local
+package-lock.json
+.eslintrc-auto-import.json
 
 # Log files
 npm-debug.log*

@@ -1,13 +1,4 @@
-/*
- * @Description: 工具类
- * @Author: gumingchen
- * @Email: 1240235512@qq.com
- * @Date: 2021-01-19 14:41:18
- * @LastEditors: gumingchen
- * @LastEditTime: 2021-04-30 17:32:53
- */
-import store from '@/store'
-import { MAPPING } from './constants'
+import { MAPPING } from '@/utils/constant'
 
 /**
  * @description: 生成UUID
@@ -15,23 +6,23 @@ import { MAPPING } from './constants'
  * @return {*}
  * @author: gumingchen
  */
-export function getUUID() {
+export function generateUUID() {
   let result = ''
-  const str = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-  result = str.replace(/[xy]/gu, c => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
+  const code = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+  result = code.replace(/[xy]/gu, item => {
+    const random = (Math.random() * 16) | 0
+    const value = item === 'x' ? random : (random & 0x3) | 0x8
+    return value.toString(16)
   })
   return result
 }
 
 /**
  * @description: 树形数据转换
- * @param {*} data
- * @param {*} key
- * @param {*} parentKey
- * @param {*} childrenKey
+ * @param {Array} data 树形数据数组
+ * @param {String} key 键值
+ * @param {String} parentKey 父级键值
+ * @param {String} childrenKey 下级键值
  * @return {*}
  * @author: gumingchen
  */
@@ -65,8 +56,8 @@ export function parseData2Tree(
 
 /**
  * @description: 日期转字符串
- * @param {*} time 日期 默认当前日期
- * @param {*} format 格式
+ * @param {Date} time 日期 默认当前日期
+ * @param {String} format 格式
  * @return {*}
  * @author: gumingchen
  */
@@ -101,8 +92,8 @@ export function parseDate2Str(time = new Date(), format = '{y}-{M}-{d} {h}:{m}:{
 
 /**
  * @description: 字符串转日期
- * @param {*} time 日期字符串
- * @param {*} separator 分隔符
+ * @param {String} time 日期字符串
+ * @param {Array} separator 分隔符
  * @return {*}
  * @author: gumingchen
  */
@@ -123,7 +114,7 @@ export function parseStr2Date(time = '', separator = ['-', ' ', ':']) {
 
 /**
  * @description: json 转 param
- * @param {*} json
+ * @param {Object} json json数据
  * @return {*}
  * @author: gumingchen
  */
@@ -141,7 +132,7 @@ export function parseJson2Param(json) {
 
 /**
  * @description: param 转 json
- * @param {*} url
+ * @param {String} url 链接
  * @return {*}
  * @author: gumingchen
  */
@@ -164,7 +155,7 @@ export function parseParam2Json(url) {
 
 /**
  * @description: 置空json数据
- * @param {*} json
+ * @param {*} data json数据
  * @return {*}
  * @author: gumingchen
  */
@@ -184,13 +175,28 @@ export function clearJson(data) {
 
 /**
  * @description: 判断是否有按钮级权限
- * @param {*} key
+ * @param {String} permission 多个使用 & 或 | 分隔开
+ * @param {String} separator 分隔符：&-并且 |-或者
  * @return {*}
  * @author: gumingchen
  */
-export function isAuth(key) {
+export function havePermission(permission) {
   let result = false
-  result = store.getters['menu/permissions'].indexOf(key) !== -1 || false
+  const separator = permission.indexOf('|') === -1 ? '&' : '|'
+  const permissions = permission.split(separator)
+  let fn = ''
+  switch (separator) {
+    case '&':
+      fn = 'every'
+      break
+    case '|':
+      fn = 'some'
+      break
+  }
+  const list = useMenuStore().permissions
+  result = fn && permissions[fn](item => {
+    return list.indexOf(item) !== -1
+  })
   return result
 }
 
@@ -200,10 +206,138 @@ export function isAuth(key) {
  * @return {*}
  * @author: gumingchen
  */
-export function getApiBaseUrl () {
-  const baseUrl = process.env.VUE_APP_PROXY === 'true'
+export function getApiBaseUrl (env) {
+  const baseUrl = env.VITE_PROXY === 'true'
     ? `/proxy${ MAPPING }`
-    : process.env.VUE_APP_BASE_API + MAPPING
+    : env.VITE_BASE_API + MAPPING
   return baseUrl
 }
 
+/**
+ * @description: hex 转 rgb
+ * @param {*} color 颜色
+ * @return {*}
+ * @author: gumingchen
+ */
+export function hex2Rgb(color) {
+  color = color.replace('#', '')
+  const result = color.match(/../g)
+  for (let i = 0; i < 3; i++) {
+    result[i] = parseInt(result[i], 16)
+  }
+  return result
+}
+
+/**
+ * @description: rgb 转 hex
+ * @param {*} r g b 颜色
+ * @return {*}
+ * @author: gumingchen
+ */
+export function rgb2Hex(r, g, b) {
+  const hexs = [r.toString(16), g.toString(16), b.toString(16)]
+  for (let i = 0; i < 3; i++) {
+    if (hexs[i].length === 1) {
+      hexs[i] = '0' + hexs[i]
+    }
+  }
+  const result = '#' + hexs.join('')
+  return result
+}
+
+/**
+ * @description: 使颜色变淡
+ * @param {*} key
+ * @return {*}
+ * @author: gumingchen
+ */
+export function lighten(color, level) {
+  const rgb = hex2Rgb(color)
+  for (let i = 0; i < 3; i++) {
+    rgb[i] = Math.floor((255 - rgb[i]) * level + rgb[i])
+  }
+  const result = rgb2Hex(rgb[0], rgb[1], rgb[2])
+  return result
+}
+
+/**
+ * @description: 使颜色变深
+ * @param {*} key
+ * @return {*}
+ * @author: gumingchen
+ */
+export function darken(color, level) {
+  const rgb = hex2Rgb(color)
+  for (let i = 0; i < 3; i++) {
+    rgb[i] = Math.floor(rgb[i] * (1 - level))
+  }
+  const result = rgb2Hex(rgb[0], rgb[1], rgb[2])
+  return result
+}
+
+/**
+ * @description: 文件下载
+ * @param {*} blob
+ * @param {*} name 文件名称
+ * @return {*}
+ * @author: gumingchen
+ */
+export function download(blob, name) {
+  if (blob) {
+    const href = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = href
+    a.download = name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(href)
+  }
+}
+
+/**
+ * 格式化存储单位
+ * @param {*} value 计量单位为 bit
+ */
+export function formatStorageUnit(value) {
+  const base = 1024
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let index = 0
+  while (value > 1000 && index < units.length) {
+    value = value / base
+    index++
+  }
+  return value.toFixed(2) + units[index]
+}
+
+/**
+ * blob 转 json
+ * @param {*} blob
+ */
+export function blob2Json(blob) {
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader()
+      reader.readAsText(blob, 'utf-8')
+      reader.addEventListener('loadend', () => {
+        try {
+          const result = JSON.parse(reader.result)
+          resolve(result)
+        } catch (error) {
+          reject({})
+        }
+      })
+    } catch (error) {
+      reject({})
+    }
+  })
+}
+
+/**
+ * 休眠函数
+ * @param {Number} ms 间隔时长
+ * @returns
+ */
+export function delay(ms = 200) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}

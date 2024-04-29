@@ -1,19 +1,13 @@
-/*
- * @Description: axios二次封装
- * @Author: gumingchen
- * @Email: 1240235512@qq.com
- * @Date: 2020-12-21 16:45:49
- * @LastEditors: gumingchen
- * @LastEditTime: 2021-05-26 21:12:19
- */
 'use strict'
 import axios from 'axios'
 import qs from 'qs'
 import router from '@/router'
-import store from '@/store'
-import { ElMessage } from 'element-plus'
-import { CONTENT_TYPE, SUCCESS_CODE, TIME_OUT, TOKEN_KEY, ContentType } from './constants'
-import { getApiBaseUrl } from '@/utils'
+
+import { CONTENT_TYPE, SUCCESS_CODE, TIME_OUT, AUTH_KEY, TNEANT_KEY } from '@/utils/constant'
+import { ContentType } from '@/utils/enum'
+import { getApiBaseUrl, blob2Json } from '@/utils'
+import Prompt from '@/utils/prompt'
+import { useAuthStore } from '../stores/modules/auth'
 
 /**
  * @description: 异常消息提示
@@ -21,12 +15,12 @@ import { getApiBaseUrl } from '@/utils'
  * @return {*}
  * @author: gumingchen
  */
-const prompt = message => {
-  ElMessage({
+const prompt = (message, single = true) => {
+  new Prompt().warning({
     message: message,
     type: 'warning',
     duration: 3000
-  })
+  }, single)
 }
 
 /**
@@ -38,11 +32,13 @@ const prompt = message => {
  */
 const codeHandle = (code, message) => {
   switch (code) {
+    case 4000:
     case 4001:
-      prompt(message)
       router.replace({
         name: 'login'
       })
+      prompt(message)
+      useAuthStore().clear()
       break
     case 401:
       router.replace({
@@ -54,14 +50,19 @@ const codeHandle = (code, message) => {
         name: '404'
       })
       break
+    case 500:
+      // router.replace({
+      //   name: '500'
+      // })
+      break
     default:
-      prompt(message)
+      prompt(message, false)
       break
   }
 }
 
 // 设置获取 baseURL
-const baseURL = getApiBaseUrl()
+const baseURL = getApiBaseUrl(import.meta.env)
 
 /**
  * @description: axios创建
@@ -71,6 +72,7 @@ const baseURL = getApiBaseUrl()
  */
 const service = axios.create({
   baseURL,
+  withCredentials: true,
   timeout: TIME_OUT,
   headers: {
     'Content-Type': CONTENT_TYPE
@@ -85,9 +87,14 @@ const service = axios.create({
  */
 service.interceptors.request.use(
   config => {
-    const tokenVal = store.getters['user/tokenVal']
-    if (tokenVal) {
-      config.headers[TOKEN_KEY] = tokenVal
+    const { token, tenantId } = useAuthStore()
+    // 设置 token
+    if (token.trim()) {
+      config.headers[AUTH_KEY] = token.trim()
+    }
+    // 设置租户ID
+    if (tenantId) {
+      config.headers[TNEANT_KEY] = tenantId
     }
     if (config.data) {
       if (config.headers['Content-Type'] === ContentType.FORM) {
@@ -109,9 +116,20 @@ service.interceptors.request.use(
  * @author: gumingchen
  */
 service.interceptors.response.use(
-  response => {
-    if (response.headers['content-type'] === 'application/octet-stream;charset=UTF-8') {
-      return response.data || null
+  async response => {
+    if (response.headers['content-type'] === ContentType.STREAM) {
+      if (!response.data.code) {
+        return {
+          blob: response.data,
+          name: decodeURI(response.headers['content-disposition'].replace('attachment;filename=', ''))
+        }
+      } else {
+        return response.data || null
+      }
+    }
+    const { responseType } = response.config
+    if (responseType === 'blob') {
+      response.data = await blob2Json(response.data)
     }
     const { code, message } = response.data
     if (!SUCCESS_CODE.includes(code)) {
@@ -176,6 +194,9 @@ service.interceptors.response.use(
       }
     } else {
       console.log('连接到服务器失败')
+      // router.replace({
+      //   name: '500'
+      // })
     }
     return Promise.reject(error)
   }

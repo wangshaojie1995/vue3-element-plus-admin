@@ -1,66 +1,59 @@
-<!--
- * @Description:
- * @Author: gumingchen
- * @Email: 1240235512@qq.com
- * @Date: 2021-04-07 13:59:38
- * @LastEditors: gumingchen
- * @LastEditTime: 2021-05-06 15:45:07
--->
 <template>
-  <div class="headbar-wrap padding-n-10">
-    <el-tooltip
-      :style="style"
-      placement="right"
-      effect="dark"
-      :show-after="1000"
-      :enterable="false"
-      content="菜单栏展开/收起">
-      <i :class="isCollapse ? 'el-icon-s-fold' : 'el-icon-s-unfold'" @click="foldHandle()" />
-    </el-tooltip>
-    <actionbar class="actionbar" />
+  <div class="headbar-container padding-n-10">
+    <el-scrollbar view-class="height-full flex flex_j_c-space-between flex_a_i-center">
+      <template v-if="menuLayoutMode === 3">
+        <Menu>
+          <Logo :collapse="false" />
+        </Menu>
+      </template>
+      <div class="flex flex_a_i-center" v-else>
+        <el-tooltip
+          content="折叠/展开菜单"
+          placement="bottom"
+          :show-after="500"
+          :hide-after="0"
+          transition="">
+          <Iconfont
+            class="cursor-pointer margin_r-20"
+            :name="`collapse-${collapse ? 'right' : 'left'}`"
+            @click="collapseHandle" />
+        </el-tooltip>
+        <Crumb />
+      </div>
+      <Action />
+    </el-scrollbar>
   </div>
 </template>
 
-<script>
-import { computed, defineComponent } from 'vue'
-import { useStore } from 'vuex'
-import Actionbar from './actionbar.vue'
+<script setup>
+import Logo from '../logo/index.vue'
+import Crumb from './components/crumb/index.vue'
+import Action from './components/action/index.vue'
+import Menu from './components/menu/index.vue'
 
-export default defineComponent({
-  components: { Actionbar },
-  setup() {
-    const store = useStore()
+const menuStore = useMenuStore()
+const { collapse } = storeToRefs(menuStore)
 
-    const navbar = computed(() => store.state.setting.navbar)
-    const isCollapse = computed(() => store.state.menu.isCollapse)
+const themeStore = useThemeStore()
 
-    const style = computed(() => {
-      return {
-        'line-height': `${ navbar.value.headHeight }px`
-      }
-    })
+const menuLayoutMode = computed(() => themeStore.layout.menuLayoutMode)
 
-    const foldHandle = () => {
-      store.dispatch('setting/setSidebarWidth', !isCollapse.value)
-      store.dispatch('menu/setIsCollapse', !isCollapse.value)
-    }
-
-    return {
-      isCollapse,
-      style,
-      foldHandle
-    }
-  }
-})
+/**
+ * @description: 菜单栏折叠事件
+ * @param {*}
+ * @return {*}
+ * @author: gumingchen
+ */
+const collapseHandle = () => {
+  collapse.value = !collapse.value
+}
 </script>
 
 <style lang="scss" scoped>
-.headbar-wrap {
-  & > i {
-    cursor: pointer;
-  }
-  .actionbar {
-    float: right;
-  }
+.headbar-container {
+  z-index: 10;
+  min-height: var(--gl-headbar-height);
+  background-color: var(--gl-headbar-background-color);
+  box-shadow: var(--el-box-shadow-light);
 }
 </style>

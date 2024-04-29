@@ -1,26 +1,18 @@
-/*
- * @Description:
- * @Author: gumingchen
- * @Email: 1240235512@qq.com
- * @Date: 2021-04-29 17:23:32
- * @LastEditors: gumingchen
- * @LastEditTime: 2021-04-30 17:07:55
- */
 import { createApp } from 'vue'
-import App from '@/App.vue'
-import Router from '@/router'
-import Store from '@/store'
-import Element from '@/element'
-import Components from '@/components/global/index'
-import Directive from '@/directive'
-import '@/assets/icon' // svg 图标引入
-import '@/assets/sass/index.scss'
+
+import App from './App.vue'
+import router from './router'
+import pinia from './stores'
+
+import '@/assets/sass/index.scss' // 全局样式
+import components from '@/components/global/index' // 全局自定义组件
+import Directive from '@/directive' // 自定义指令
 
 const app = createApp(App)
 
-app.use(Store)
-  .use(Router)
-  .use(Element)
-  .use(Components)
+app.use(router)
+  .use(pinia)
+  .use(components)
   .use(Directive)
   .mount('#app')
+

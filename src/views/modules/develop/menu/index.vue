@@ -1,422 +1,311 @@
-<!--
- * @Description:
- * @Author: gumingchen
- * @Email: 1240235512@qq.com
- * @Date: 2021-04-19 16:53:30
- * @LastEditors: gumingchen
- * @LastEditTime: 2021-05-28 16:21:17
--->
-<template>
-  <div class="g-container">
-    <el-form ref="refForm" inline>
-      <el-form-item>
-        <el-button v-permission="'backstage:menu:create'" type="primary" @click="addEditHandle()">新增</el-button>
-      </el-form-item>
-    </el-form>
-    <el-table
-      border
-      class="g-table"
-      element-loading-spinner="el-icon-loading"
-      v-loading="loading"
-      :data="list"
-      lazy
-      :load="loadHandle"
-      :tree-props="props"
-      row-key="id">
-      <el-table-column
-        header-align="center"
-        label="中文名称"
-        prop="name_cn"
-        min-width="150" />
-      <el-table-column
-        align="center"
-        label="英文名称"
-        prop="name_en"
-        min-width="150">
-        <template v-slot="{ row }">
-          {{ row.name_en ? row.name_en : '—' }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="图标"
-        width="80">
-        <template v-slot="{ row }">
-          <gl-svg v-if="row.type !== 2" :name="row.icon || ''" />
-          <span v-else>—</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="类型"
-        prop="type"
-        width="90">
-        <template v-slot="{ row }">
-          <el-tag v-if="row.type === 0" size="small">目录</el-tag>
-          <el-tag v-else-if="row.type === 1" size="small" type="success">菜单</el-tag>
-          <el-tag v-else-if="row.type === 2" size="small" type="info">按钮</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="URL"
-        prop="url"
-        min-width="150"
-        :show-overflow-tooltip="true">
-        <template v-slot="{ row }">
-          <span v-if="row.type !== 0">{{ row.url }}</span>
-          <span v-else>—</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        header-align="center"
-        align="center"
-        label="授权标识"
-        prop="permission"
-        min-width="150"
-        :show-overflow-tooltip="true">
-        <template v-slot="{ row }">
-          <span v-if="row.type !== 0">{{ row.permission }}</span>
-          <span v-else>—</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        header-align="center"
-        align="center"
-        label="排序"
-        prop="sort"
-        width="80" />
-      <el-table-column
-        align="center"
-        label="是否显示"
-        prop="is_display"
-        min-width="90">
-        <template v-slot="{ row }">
-          <el-switch
-            v-permission="'backstage:menu:display'"
-            @change="displayHandle(row)"
-            v-model="row.is_display"
-            active-color="#13ce66"
-            inactive-color="#ff4949"
-            :active-value="1"
-            :inactive-value="0" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="是否缓存"
-        prop="is_alive"
-        min-width="110">
-        <template v-slot="{ row }">
-          <el-switch
-            v-if="row.type !== 0 && row.url"
-            v-permission="'backstage:menu:alive'"
-            @change="keepAliveHandle(row)"
-            v-model="row.is_alive"
-            active-color="#13ce66"
-            inactive-color="#ff4949"
-            :active-value="1"
-            :inactive-value="0" />
-          <span v-else>—</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="是否在tab显示"
-        prop="is_tab"
-        min-width="130">
-        <template v-slot="{ row }">
-          <el-switch
-            v-if="row.type !== 0 && row.url"
-            :disabled="row.is_display === 0"
-            v-permission="'backstage:menu:tab'"
-            @change="tabHandle(row)"
-            v-model="row.is_tab"
-            active-color="#13ce66"
-            inactive-color="#ff4949"
-            :active-value="1"
-            :inactive-value="0" />
-          <span v-else>—</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="是否支持tab多开"
-        prop="is_multiple"
-        min-width="160">
-        <template v-slot="{ row }">
-          <el-switch
-            v-if="row.type !== 0 && row.url"
-            :disabled="row.is_display === 0 || row.is_tab === 0"
-            v-permission="'backstage:menu:multiple'"
-            @change="multipleHandle(row)"
-            v-model="row.is_multiple"
-            active-color="#13ce66"
-            inactive-color="#ff4949"
-            :active-value="1"
-            :inactive-value="0" />
-          <span v-else>—</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="操作"
-        width="100"
-        fixed="right">
-        <template v-slot="{ row }">
-          <el-button
-            v-permission="'backstage:menu:update'"
-            type="text"
-            size="small"
-            @click="addEditHandle(row.id)">编辑</el-button>
-          <el-button
-            v-permission="'backstage:menu:delete'"
-            type="text"
-            size="small"
-            @click="delHandle(row.id)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <add-edit ref="refAddEdit" v-if="visible" @refresh="setList" />
-  </div>
-</template>
+<script setup>
+import { ElMessage } from 'element-plus'
+import ContainerSidebar from '@/components/container-sidebar/index.vue'
+import Sidebar from './components/sidebar.vue'
+import IconSelectInput from '@/components/icon-select-input/index.vue'
 
-<script>
-import { defineComponent, nextTick, onBeforeMount, reactive, ref, toRefs } from 'vue'
+import useDict from '@/hooks/dict'
 
-import useInstance from '@/mixins/instance'
-import AddEdit from './components/add-edit.vue'
-import { tabApi, aliveApi, displayApi, listApi, multipleApi, delApi } from '@/api/develop/menu'
+import { havePermission } from '@/utils'
+import { MenuType, Status } from '@/utils/enum'
+import { VIRTUAL_ID_KEY } from './index.js'
 
-export default defineComponent({
-  components: { AddEdit },
-  setup() {
-    const { $message, $confirm } = useInstance()
+import { infoApi, createApi, updateApi } from '@/api/menu'
 
-    const refForm = ref()
-    const refAddEdit = ref()
-    const props = { children: 'children', hasChildren: 'hasChildren' }
-    const data = reactive({
-      loading: false,
-      visible: false,
-      list: []
-    })
+defineOptions({
+  name: 'DevelopMenu'
+})
 
-    /**
-     * @description: 父级ID获取菜单
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const getList = async (parentId = 0) => {
-      const params = {
-        parent_id: parentId
-      }
-      const r = await listApi(params)
-      if (r) {
-        r.data.forEach(item => {
-          if (item.type !== 2) {
-            item.hasChildren = true
-          }
-        })
-      }
-      return r
-    }
+const { dict, getDict } = useDict()
 
-    /**
-     * @description: 首次加载获取值
-     * @param {*} async
-     * @return {*}
-     * @author: gumingchen
-     */
-    const setList = async () => {
-      data.loading = true
-      data.list = []
-      data.list = (await getList()).data || []
-      nextTick(() => {
-        data.loading = false
-      })
-    }
-
-    /**
-     * @description: 懒加载事件
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const loadHandle = (row, _treeNode, resolve) => {
-      getList(row.id).then(r => {
-        if (r) {
-          resolve(r.data)
-        } else {
-          resolve([])
-        }
-      })
-    }
-
-    /**
-     * @description: 新增/编辑弹窗
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const addEditHandle = id => {
-      data.visible = true
-      nextTick(() => {
-        refAddEdit.value.init(id)
-      })
-    }
-
-    /**
-     * @description: 删除
-     * @param {number} id
-     * @return {*}
-     * @author: gumingchen
-     */
-    const delHandle = id => {
-      $confirm(`确定对[id=${ id }]进行[删除]操作?`, '提示', {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        const params = {
-          id: id
-        }
-        delApi(params).then(r => {
-          if (r) {
-            $message({
-              message: '操作成功!',
-              type: 'success'
-            })
-            setList()
-          }
-        })
-      }).catch(() => {
-        // to do something on canceled
-      })
-    }
-
-    /**
-     * @description: 是否显示
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const displayHandle = row => {
-      if (row.id) {
-        const params = {
-          key: row.id,
-          value: row.is_display
-        }
-        displayApi(params).then(r => {
-          if (r) {
-            $message({
-              message: '操作成功!',
-              type: 'success'
-            })
-          } else {
-            row.is_display = row.is_display === 1 ? 0 : 1
-          }
-        })
-      }
-    }
-
-    /**
-     * @description: 是否缓存
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const keepAliveHandle = row => {
-      if (row.id) {
-        const params = {
-          key: row.id,
-          value: row.is_alive
-        }
-        aliveApi(params).then(r => {
-          if (r) {
-            $message({
-              message: '操作成功!',
-              type: 'success'
-            })
-          } else {
-            row.is_alive = row.is_alive === 1 ? 0 : 1
-          }
-        })
-      }
-    }
-
-    /**
-     * @description: 是否在tab显示
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const tabHandle = row => {
-      if (row.id) {
-        const params = {
-          key: row.id,
-          value: row.is_tab
-        }
-        tabApi(params).then(r => {
-          if (r) {
-            $message({
-              message: '操作成功!',
-              type: 'success'
-            })
-          } else {
-            row.is_tab = row.is_tab === 1 ? 0 : 1
-          }
-        })
-      }
-    }
-
-    /**
-     * @description: 是否支持tab多开
-     * @param {*}
-     * @return {*}
-     * @author: gumingchen
-     */
-    const multipleHandle = row => {
-      if (row.id) {
-        const params = {
-          key: row.id,
-          value: row.is_multiple
-        }
-        multipleApi(params).then(r => {
-          if (r) {
-            $message({
-              message: '操作成功!',
-              type: 'success'
-            })
-          } else {
-            row.is_multiple = row.is_multiple === 1 ? 0 : 1
-          }
-        })
-      }
-    }
-
-    onBeforeMount(() => {
-      setList()
-    })
-
-    return {
-      refForm,
-      refAddEdit,
-      props,
-      ...toRefs(data),
-      setList,
-      loadHandle,
-      addEditHandle,
-      delHandle,
-      displayHandle,
-      keepAliveHandle,
-      tabHandle,
-      multipleHandle
+const refContainerSidebar = ref()
+const refForm = ref()
+const readonly = ref(!havePermission('menu:create|menu:update'))
+const active = ref('')
+const loading = ref(false)
+const form = reactive({
+  id: null,
+  name: '',
+  routePath: '',
+  routeName: '',
+  redirectName: '',
+  componentName: '',
+  url: '',
+  permission: '',
+  type: '',
+  icon: '',
+  show: 1,
+  tab: 1,
+  multiple: 0,
+  keepalive: 0,
+  sort: 1,
+  parentId: '',
+  status: Status.ENABLE
+})
+const row = ref(null) // todo: 引用传递 用于编辑之后修改 列表数据
+const parentType = ref(0) // 父级的类型
+const rules = reactive(function() {
+  const checkUrl = (_rule, value, callback) => {
+    const types = [MenuType.MENU, MenuType.IFRAME, MenuType.URL]
+    if (types.includes(form.type) && !value) {
+      callback(new Error('请输入路由Path / Http[s] URL'))
+    } else {
+      callback()
     }
   }
+  const checkPermission = (_rule, value, callback) => {
+    const types = [MenuType.BUTTON]
+    if (types.includes(form.type) && !value) {
+      callback(new Error('请输入授权标识'))
+    } else {
+      callback()
+    }
+  }
+  const checkIcon = (_rule, value, callback) => {
+    const types = [MenuType.CATALOG, MenuType.MENU, MenuType.IFRAME, MenuType.URL]
+    if (types.includes(form.type) && !value) {
+      callback(new Error('请输入授权标识'))
+    } else {
+      callback()
+    }
+  }
+  return {
+    name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
+    url: [
+      { required: false, message: '请输入路由Path / Http[s] URL', trigger: 'blur' },
+      { validator: checkUrl, trigger: 'blur' }
+    ],
+    permission: [
+      { required: false, message: '请输入授权标识', trigger: 'blur' },
+      { validator: checkPermission, trigger: 'blur' }
+    ]
+  }
+}())
+
+const getInfo = async () => {
+  loading.value = true
+  const r = await infoApi({ id: form.id })
+  if (r) {
+    form.name = r.data.name
+    form.routePath = r.data.routePath
+    form.routeName = r.data.routeName
+    form.redirectName = r.data.redirectName
+    form.componentName = r.data.componentName
+    form.url = r.data.url
+    form.permission = r.data.permission
+    form.type = r.data.type
+    form.icon = r.data.icon || ''
+    form.show = r.data.show
+    form.tab = r.data.tab
+    form.multiple = r.data.multiple
+    form.keepalive = r.data.keepalive
+    form.sort = r.data.sort
+    form.parentId = r.data.parentId
+    form.status = r.data.status
+  }
+  nextTick(() => { loading.value = false })
+}
+
+const clearFrom = () => {
+  form.id = null,
+  form.name = ''
+  form.routePath = ''
+  form.routeName = ''
+  form.redirectName = ''
+  form.componentName = ''
+  form.url = ''
+  form.permission = ''
+  form.icon = ''
+}
+
+const clearRouterParams = () => {
+  form.show = 1
+  form.tab = 1
+  form.multiple = 0
+  form.keepalive = 0
+}
+
+const changeHandle = (val) => {
+  refContainerSidebar.value.setScrollTop()
+  if (!val) {
+    active.value = ''
+    return
+  } else if ((val.row.id + '').includes(VIRTUAL_ID_KEY)) {
+    clearFrom()
+    form.name = val.row.name
+    form.parentId = val.row.parentId
+    form.type = val.row.type
+    form.tab = 0
+    form.sort = 1
+  } else {
+    form.id = val.row.id
+    getInfo()
+  }
+  row.value = val.row
+  parentType.value = val.parentType
+}
+
+const buttonHandle = (val) => {
+  let result = false
+  switch (parentType.value) {
+    case MenuType.CATALOG:
+      if (val === MenuType.BUTTON) {
+        result = true
+      }
+      break
+    case MenuType.GROUP:
+      if (val === MenuType.BUTTON) {
+        result = true
+      }
+      break
+    case MenuType.ROUTER:
+      if (val === MenuType.CATALOG || val === MenuType.GROUP) {
+        result = true
+      }
+      break
+    case MenuType.MENU:
+      if (val !== MenuType.BUTTON && val !== MenuType.MENU) {
+        result = true
+      }
+      break
+  }
+  return result
+}
+
+const submit = () => {
+  refForm.value.validate(async valid => {
+    if (valid) {
+      const r = form.id ? await updateApi(form) : await createApi(form)
+      if (r) {
+        ElMessage({
+          message: '操作成功!',
+          type: 'success'
+        })
+        if (r.data) {
+          const { id, name, parentId, type, type_type, type_class, type_dict } = r.data
+          form.id = id
+          row.value.id = id
+          row.value.name = name
+          row.value.parentId = parentId
+          row.value.type = type
+          row.value.type_type = type_type
+          row.value.type_class = type_class
+          row.value.type_dict = type_dict
+        }
+      }
+    }
+  })
+}
+
+onBeforeMount(() => {
+  getDict('MENU')
 })
 </script>
 
+<template>
+  <ContainerSidebar ref="refContainerSidebar" :scroll="false">
+    <template #sidebar>
+      <Sidebar v-model="active" @change="changeHandle" />
+    </template>
+    <template #default>
+      <div class="name-box margin_b-20 font-size-20">{{form.name}}&nbsp;</div>
+      <el-row v-show="active">
+        <el-col
+          :xs="24"
+          :sm="24"
+          :md="16"
+          :lg="14"
+          :xl="10">
+          <el-form
+            v-loading="loading"
+            :model="form"
+            :rules="rules"
+            ref="refForm"
+            @keyup.enter="submit()"
+            label-position="top">
+            <el-form-item label="中文名称" prop="name">
+              <el-input
+                v-model="form.name"
+                placeholder="中文名称"
+                maxlength="20"
+                show-word-limit
+                :readonly="readonly" />
+            </el-form-item>
+            <el-form-item label="类型" prop="type">
+              <el-radio-group v-model="form.type" :disabled="readonly" @change="clearRouterParams">
+                <el-radio-button
+                  :label="item.value"
+                  :disabled="buttonHandle(item.value)"
+                  v-for="item in dict"
+                  :key="item.value">{{item.label}}</el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="组件名称（若为空则无法进行缓存）" prop="componentName" v-if="form.type == MenuType.ROUTER || form.type == MenuType.MENU">
+              <el-input v-model="form.componentName" placeholder="路由Name" :readonly="readonly" />
+            </el-form-item>
+            <el-form-item
+              label="组件Path（src/views/modules 为根目录，须省略组件文件的 .vue 后缀）/ Http[s] URL"
+              prop="url"
+              v-if="form.type !== MenuType.CATALOG && form.type !== MenuType.GROUP && form.type !== MenuType.BUTTON">
+              <el-input v-model="form.url" placeholder="路由Path / Http[s] URL" :readonly="readonly" />
+            </el-form-item>
+            <el-form-item label="路由Path（若为空则按照url路径处理）" prop="routePath" v-if="form.type == MenuType.ROUTER || form.type == MenuType.MENU">
+              <el-input v-model="form.routePath" placeholder="路由Path" :readonly="readonly" />
+            </el-form-item>
+            <el-form-item label="路由Name（若为空则按照url路径处理）" prop="routeName" v-if="form.type == MenuType.ROUTER || form.type == MenuType.MENU">
+              <el-input v-model="form.routeName" placeholder="路由Name" :readonly="readonly" />
+            </el-form-item>
+            <el-form-item label="路由重定向 name 属性值（用于嵌套路由）" prop="redirectName" v-if="form.type == MenuType.ROUTER">
+              <el-input v-model="form.redirectName" placeholder="路由Name" :readonly="readonly" />
+            </el-form-item>
+            <el-form-item label="授权标识" prop="permission" v-if="form.type == MenuType.ROUTER || form.type == MenuType.MENU || form.type == MenuType.BUTTON">
+              <el-input v-model="form.permission" placeholder="授权标识" :readonly="readonly" />
+            </el-form-item>
+            <el-form-item label="图标" prop="icon" v-if="form.type !== MenuType.BUTTON">
+              <IconSelectInput v-model="form.icon" :readonly="readonly" />
+            </el-form-item>
+            <el-form-item label="排序" prop="sort">
+              <el-input-number
+                v-model="form.sort"
+                :min="1"
+                controls-position="right"
+                :disabled="readonly" />
+            </el-form-item>
+            <template v-if="form.type == MenuType.ROUTER || form.type === MenuType.MENU || form.type === MenuType.IFRAME">
+              <el-form-item label="是否在侧边菜单栏显示（如：个人中心，详情页都不需要显示）" prop="show">
+                <DictRadio v-model="form.show" code="WHETHER" :disabled="readonly" />
+              </el-form-item>
+              <el-form-item label="是否在tab页签显示" prop="tab">
+                <DictRadio v-model="form.tab" code="WHETHER" :disabled="readonly" />
+              </el-form-item>
+              <template v-if="form.type == MenuType.ROUTER || form.type === MenuType.MENU">
+                <el-form-item label="是否支持tab页签多开（如：用户1的详情页、用户2的详情并存在tab页签）" prop="multiple">
+                  <DictRadio v-model="form.multiple" code="WHETHER" :disabled="readonly" />
+                </el-form-item>
+                <el-form-item label="是否支持缓存（若是路由不设置缓存，但其下的菜单或路由设置了缓存，那么离开这个路由页将不会继续缓存）" prop="keepalive">
+                  <DictRadio v-model="form.keepalive" code="WHETHER" :disabled="readonly" />
+                </el-form-item>
+              </template>
+            </template>
+            <el-form-item label="是否启用" prop="status">
+              <DictRadio v-model="form.status" code="STATUS" :disabled="readonly" />
+            </el-form-item>
+            <el-form-item v-show="!readonly">
+              <el-button
+                v-repeat
+                v-permission="'menu:update'"
+                type="primary"
+                @click="submit">保存</el-button>
+            </el-form-item>
+          </el-form>
+        </el-col>
+      </el-row>
+    </template>
+  </ContainerSidebar>
+</template>
+
 <style lang="scss" scoped>
+.name-box {
+  font-weight: bold;
+}
 </style>

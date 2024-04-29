@@ -1,28 +1,81 @@
-$--color-primary: #409EFF;
-$--font-path: '~element-plus/lib/theme-chalk/fonts';
-@import "~element-plus/packages/theme-chalk/src/index";
-@import "mixin";
+@forward "element-plus/theme-chalk/src/common/var.scss" with (
+  $colors: (
+    'white': #fff,
+    'black': #000,
+    'primary': (
+      'base': #409eff,
+    ),
+    'success': (
+      'base': #67c23a,
+    ),
+    'warning': (
+      'base': #e6a23c,
+    ),
+    'danger': (
+      'base': #f56c6c,
+    ),
+    'error': (
+      'base': #f56c6c,
+    ),
+    'info': (
+      'base': #909399,
+    ),
+  ),
+  $text-color: (
+    (
+      'primary': #303133,
+      'regular': #606266,
+      'secondary': #909399,
+      'placeholder': #a8abb2,
+      'disabled': #c0c4cc,
+    )
+  ),
+);
 
-// form label 超出 显示省略号
-.el-form-item__label {
-  @include single-ellipse;
-  line-height: 18px !important;
+@import "element-plus/theme-chalk/src/index.scss";
+
+/* Element - 暗黑主题 */
+@import 'element-plus/theme-chalk/src/dark/css-vars.scss';
+html.dark {
+  --gl-sidebar-background-color: var(--el-bg-color);
+
+  --gl-headbar-background-color: var(--el-bg-color);
+
+  --gl-tabsbar-background-color: var(--el-bg-color);
+
+  --gl-content-background-color: #222222;
+  --gl-content-panel-background-color: var(--el-bg-color);
+
+  .el-table .el-table__body-wrapper {background: var(--el-bg-color);}
 }
-// dialog body padding 调整
-.el-dialog__body {
-  padding: 10px 20px 0px 20px;
+
+// 修复 消息确认弹窗样式
+.el-message-box__status {
+  position: absolute !important;
 }
-// 菜单新增编辑弹窗 popper 图标样式
-.popper-menu-add-edit {
-  .icon-wrap {
-    padding-left: 10px;
-    .icon-btn {
-      padding: 7px;
-      margin: 0 10px 10px 0;
-    }
+// 修复 通知弹窗样式
+.el-notification {
+  &__icon {
+    height: var(--el-notification-icon-size)!important;
+    width: var(--el-notification-icon-size)!important;
+    font-size: var(--el-notification-icon-size)!important;
+  }
+  &--success, &--warning, &--info, &--error {
+    color: var(--el-notification-icon-color)!important;
+  }
+  &__closeBtn {
+    position: absolute !important;
   }
 }
-// 头像组件样式调整修改
-.el-avatar > img {
-  width: 100%;
+// 弹窗处理 添加滚动条
+.el-dialog {
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  .el-dialog__body {
+    // 移除 弹窗 body 的上下padding
+    padding-top: 0px !important;
+    padding-bottom: 1px !important; // 设置为1是为了处理滚动条的问题
+    overflow: auto;
+  }
 }

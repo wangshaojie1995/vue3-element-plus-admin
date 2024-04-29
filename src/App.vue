@@ -1,40 +1,31 @@
-<!--
- * @Description:
- * @Author: gumingchen
- * @Email: 1240235512@qq.com
- * @Date: 2021-04-29 17:23:32
- * @LastEditors: gumingchen
- * @LastEditTime: 2021-04-29 18:12:40
--->
+<script setup>
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+
+const themeStore = useThemeStore()
+themeStore.getTheme()
+
+const { reload } = storeToRefs(themeStore)
+
+const locale = ref(zhCn)
+const size = ref('default')
+const zIndex = ref(3000)
+</script>
+
 <template>
-  <el-config-provider :locale="locale">
-    <router-view />
+  <el-config-provider :locale="locale" :size="size" :z-index="zIndex">
+    <View v-if="!reload" transition="el-fade-in" class="flex-item_f-1" />
   </el-config-provider>
 </template>
 
-<script>
-import { defineComponent, ref } from 'vue'
-import { ElConfigProvider } from 'element-plus'
-import zhCn from 'element-plus/lib/locale/lang/zh-cn'
-export default defineComponent({
-  components: {
-    [ElConfigProvider.name]: ElConfigProvider
-  },
-  setup() {
-    const locale = ref(zhCn)
-    return {
-      locale
-    }
-  }
-})
-</script>
-
 <style lang="scss">
-@import '@/assets/sass/_variable.scss';
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: nth($fontColor, 1);
+  height: 100%;
+  width: 100%;
+  display: flex;
+  color: var(--el-text-color-primary);
+  font-size: var(--el-font-size-base);
 }
 </style>
